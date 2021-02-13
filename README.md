@@ -7,7 +7,7 @@ Lets you swap around the turrets on the vehicles in the game Unreal Tournament 2
 
 ## Installation
 
-Grab the compiled version from the GitHub Release page and drop it under your UT2004 `System` folder.
+Grab the compiled version (you want the `.u` file) from the [GitHub Release page](https://github.com/LionsPhil/ut2004mods/releases/) and drop it under your UT2004 `System` folder.
 
 You will need ~the last official patch version, which IIRC is 3369, with the ECE bonus pack (which was free). If you have a UT2004 install in 2021, I strongly suspect you already have these.
 
