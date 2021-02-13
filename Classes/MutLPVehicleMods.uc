@@ -18,7 +18,6 @@
 
 // TODO Create a LinkGunTurret and add support for it
 // TODO Look into fiddling with the AI desirability of meddled vehicles (may be impossible without subclassing)
-// TODO Add a "neverkick" to turrets which have to charge up, else they kick continuously =/
 
 class MutLPVehicleMods extends Mutator
 	dependson(ONSVehicle)
@@ -48,6 +47,7 @@ struct MutLPVehicleModsWeapon {
 	var string dname; // Display name
 	var string clsname; // Class name
 	var bool big;
+	var bool charging; // Avoid generating impulses
 };
 
 var config bool adapthandling; // Make physics adaptations to allow for new weapons
@@ -60,6 +60,7 @@ var config string weaponselection_goliath_p0;
 var config string weaponselection_iontank_d0;
 var config string weaponselection_iontank_p0;
 var config string weaponselection_leviathan_d0;
+var config string weaponselection_leviathan_d1;
 var config string weaponselection_leviathan_p0;
 var config string weaponselection_leviathan_p1;
 var config string weaponselection_leviathan_p2;
@@ -70,6 +71,7 @@ var config string weaponselection_paladin_p0;
 var config string weaponselection_spma_d0;
 var config string weaponselection_spma_p0;
 var config string weaponselection_cicada_d0;
+var config string weaponselection_cicada_d1;
 var config string weaponselection_cicada_p0;
 
 
@@ -104,14 +106,19 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 	// Find the weapon
 	windex = LookupWeapon(wepclass);
 	weapon = weapons[windex];
-
-	// Set weaponclsdrv/pas appropriately
 	if(windex != 0) {
 		wclass = class<ONSWeapon>(DynamicLoadObject(weapon.clsname, class'Class'));
 		vehicle.modified = true;
 	} else {
 		wclass = None;
 	}
+
+	// Apply special case for Leviathan main cannon
+	if((wclass == class'OnslaughtFull.ONSMASCannon') && (vehicle.cfgname != "leviathan")) {
+		wclass = class'LionsPhilMut.ONSMASCannonAlwaysDeployed';
+	}
+
+	// Set weaponclsdrv/pas appropriately
 	if(driver) {
 		vehicle.weaponclsdrv[idx] = wclass;
 	} else {
@@ -126,6 +133,12 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 		} else if(vehicle.big && weapon.big) {
 			vehicle.missized = false; // Big vehicle has gained big weapon, so is no long missized
 		}
+	}
+
+	// If this weapon is of charging type, disable impulse
+	if(weapon.charging) {
+		vehicle.pcimpulse = 0.0;
+		log(">>>>> This vehicle " $ vehicle.dname $ " has a charging weapon, so its impulse has been zero'd.");
 	}
 
 	// Debugging trace
@@ -182,6 +195,7 @@ function BeginPlay() { // Care not for Zones or Volumes, so don't need to wait u
 			SetVehicleWeapon(vehicle, false, 0, weaponselection_iontank_p0);
 		} else if(vehicle.cfgname == "leviathan") {
 			SetVehicleWeapon(vehicle, true,  0, weaponselection_leviathan_d0);
+			SetVehicleWeapon(vehicle, true,  1, weaponselection_leviathan_d1);
 			SetVehicleWeapon(vehicle, false, 0, weaponselection_leviathan_p0);
 			SetVehicleWeapon(vehicle, false, 1, weaponselection_leviathan_p1);
 			SetVehicleWeapon(vehicle, false, 2, weaponselection_leviathan_p2);
@@ -196,13 +210,36 @@ function BeginPlay() { // Care not for Zones or Volumes, so don't need to wait u
 			SetVehicleWeapon(vehicle, false, 0, weaponselection_spma_p0);
 		} else if(vehicle.cfgname == "cicada") {
 			SetVehicleWeapon(vehicle, true,  0, weaponselection_cicada_d0);
+			SetVehicleWeapon(vehicle, true,  1, weaponselection_cicada_d1);
 			SetVehicleWeapon(vehicle, false, 0, weaponselection_cicada_p0);
 		} else { log("MutLPVehicleMods: Unknown vehicle '" $ vehicle.cfgname $ "'!"); }
 
 		// End stonking great lump. Have a nice day!
 
+        log(">>> " $ vehicle.dname $ " has impulse of " $ vehicle.pcimpulse);
 		vehicles[vindex] = vehicle; // Yeah, you WISH it were a reference!
 	}
+}
+
+// Works out if the vehicle is one of these. Does some magic to allow for the subclassing in the vehicle tree (e.g. Cicada subclasses Raptor)
+function bool IsVehicleOneOfThese(ONSVehicle actvehicle, int queryindex) {
+	local int vindex;
+	// Consider also ClassIsChildOf(actvehicle.class, vehicles[queryindex].cls)
+	if(actvehicle.IsA(vehicles[queryindex].cls.Name)) {
+		// Ok, we're it/a subclass of it...but are we a subclass of something more specific?
+		for(vindex = 0; vindex < vehiclecount; vindex++) {
+			if((vindex != queryindex) && // Don't test against self!
+			   ClassIsChildOf(vehicles[vindex].cls, vehicles[queryindex].cls)) { // This other vehicle is a subclass of our candidate
+			   	// If we're one of the subclass, we're NOT considered one of these
+				// Recurse, in case we're even MORE specific
+			   	if(IsVehicleOneOfThese(actvehicle, vindex))
+					{ return false; }
+			}
+		}
+		// Ok, we're convinced
+		return true;
+	}
+	return false; // Not it/a subclass
 }
 
 // Modify vehicles as they are created in CheckReplacement. This avoids the need
@@ -220,7 +257,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 
 	for(vindex = 0; vindex < vehiclecount; vindex++) {
 		vehicle = vehicles[vindex];
-		if(vehicle.modified && Other.IsA(vehicle.cls.Name)) { // Consider also ClassIsChildOf(Other.class, vehicle.cls)
+		if(vehicle.modified && IsVehicleOneOfThese(actvehicle, vindex)) {
 //			log("MutLPVehicleMods: Changing a vehicle of type " $ string(vehicle.cls.Name)); // Debug
 			// Ah, we've found it! Change the weapon slots.
 			for(sindex = 0; sindex < vehicle.driverweps; sindex++) {
@@ -234,7 +271,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 					actvehicle.PassengerWeapons[sindex].WeaponPawnClass =
 						vehicle.weaponclspas[sindex];
 				}
-			} ** Unsupported for now--ONSWeapon != ONSWeaponPawn (latter contains former) */
+			} */ // Unsupported for now--ONSWeapon != ONSWeaponPawn (latter contains former in Gun/GunClass field)
 
 			// Modify the physical properties if needed
 			if(adapthandling && vehicle.missized) {
@@ -299,41 +336,41 @@ static function FillPlayInfo(PlayInfo playinfo) {
 
 // DATA ////////////////////////////////////////////////////////////////////////
 defaultproperties {
-	FriendlyName="LionsPhil's Vehicle Modifications"
-	Description="Pimp your Onslaught-bound rides with an assortment of interesting tweaks.||http://www.zepler.net/~lionsphil/"
+	FriendlyName="LionsPhil's Vehicle Modifications";
+	Description="Pimp your Onslaught-bound rides with an assortment of interesting tweaks.||http://www.zepler.net/~lionsphil/";
 	bAddToServerPackages = true;
 
 	adapthandling = true;
 
-	vehicles[0] = (dname="Manta",clsname="Onslaught.ONSHoverBike",cfgname="manta",big=false,driverweps=1,passengerweps=0,pcmass=2.5,pccom=(X=0,Y=0,Z=-0.5),pcimpulse=131072);
+	vehicles[0] = (dname="Manta",clsname="Onslaught.ONSHoverBike",cfgname="manta",big=false,driverweps=1,passengerweps=0,pcmass=2.5,pccom=(X=0,Y=0,Z=0.5),pcimpulse=131072);
 	vehicles[1] = (dname="Scorpion",clsname="Onslaught.ONSRV",cfgname="scorpion",big=false,driverweps=1,passengerweps=0,pcmass=1.5,pccom=(X=-0.8125,Y=0,Z=-1.3),pcimpulse=98304);
 	vehicles[2] = (dname="Hellbender",clsname="Onslaught.ONSPRV",cfgname="hellbender",big=true,driverweps=0,passengerweps=2,pcmass=0.9,pccom=(X=-0.3,Y=0,Z=-0.5),pcimpulse=2048);
 	vehicles[3] = (dname="Goliath",clsname="Onslaught.ONSHoverTank",cfgname="goliath",big=true,driverweps=1,passengerweps=1,pcmass=0.92,pccom=(X=0,Y=0,Z=0.2),pcimpulse=1024);
 	vehicles[4] = (dname="Ion tank",clsname="OnslaughtFull.ONSHoverTank_IonPlasma",cfgname="iontank",big=true,driverweps=1,passengerweps=1,pcmass=0.91,pccom=(X=0,Y=0,Z=0.2),pcimpulse=1536);
-	vehicles[5] = (dname="Leviathan",clsname="OnslaughtFull.ONSMobileAssaultStation",cfgname="leviathan",big=true,driverweps=1,passengerweps=4,pcmass=0.95,pccom=(X=0,Y=0,Z=0),pcimpulse=0);
-	vehicles[6] = (dname="Raptor",clsname="Onslaught.ONSAttackCraft",cfgname="raptor",big=false,driverweps=1,passengerweps=0,pcmass=1.75,pccom=(X=-0.25,Y=0,Z=-0.5),pcimpulse=98304);
+	vehicles[5] = (dname="Leviathan",clsname="OnslaughtFull.ONSMobileAssaultStation",cfgname="leviathan",big=true,driverweps=2,passengerweps=4,pcmass=0.95,pccom=(X=0,Y=0,Z=0),pcimpulse=0);
+	vehicles[6] = (dname="Raptor",clsname="Onslaught.ONSAttackCraft",cfgname="raptor",big=false,driverweps=1,passengerweps=0,pcmass=1.75,pccom=(X=-0.25,Y=0,Z=0.5),pcimpulse=98304);
 	vehicles[7] = (dname="Paladin",clsname="OnslaughtBP.ONSShockTank",cfgname="paladin",big=true,driverweps=1,passengerweps=1,pcmass=0.85,pccom=(X=-0.25,Y=0,Z=-1.25),pcimpulse=4096);
 	vehicles[8] = (dname="S.P.M.A.",clsname="OnslaughtBP.ONSArtillery",cfgname="spma",big=true,driverweps=1,passengerweps=1,pcmass=0.8,pccom=(X=0,Y=0,Z=-0.6),pcimpulse=4096);
-	vehicles[9] = (dname="Cicada",clsname="OnslaughtBP.ONSDualAttackCraft",cfgname="cicada",big=false,driverweps=1,passengerweps=1,pcmass=1.5,pccom=(X=-0.25,Y=0,Z=-0.25),pcimpulse=65536);
+	vehicles[9] = (dname="Cicada",clsname="OnslaughtBP.ONSDualAttackCraft",cfgname="cicada",big=false,driverweps=2,passengerweps=1,pcmass=1.5,pccom=(X=-0.25,Y=0,Z=0.25),pcimpulse=65536);
 	vehiclecount = 10;
 
-	weapons[0] = (dname="(Default)",clsname="_default_",big=false);
-	weapons[1] = (dname="Manta plasma casters",clsname="Onslaught.ONSHoverBikePlasmaGun",big=false);
-	weapons[2] = (dname="Scorpion plasma ribbon launcher",clsname="Onslaught.ONSRVWebLauncher",big=false);
-	weapons[3] = (dname="Hellbender skymine launcher",clsname="Onslaught.ONSPRVSideGun",big=false);
-	weapons[4] = (dname="Hellbender dual laser turret",clsname="Onslaught.ONSPRVRearGun",big=true);
-	weapons[5] = (dname="Goliath cannon",clsname="Onslaught.ONSHoverTankCannon",big=true);
-	weapons[6] = (dname="Goliath machinegun",clsname="Onslaught.ONSTankSecondaryTurret",big=false);
-	weapons[7] = (dname="Ion tank cannon",clsname="OnslaughtFull.ONSHoverTank_IonPlasma_Weapon",big=true);
-	weapons[8] = (dname="Leviathan auxillary plasma",clsname="OnslaughtFull.ONSMASSideGun",big=false);
-	weapons[9] = (dname="Leviathan rocket pack",clsname="OnslaughtFull.ONSMASRocketPack",big=true);
-	weapons[10] = (dname="Leviathan main cannon",clsname="OnslaughtFull.ONSMASCannon",big=true);
-	weapons[11] = (dname="Raptor plasma/missiles",clsname="Onslaught.ONSAttackCraftGun",big=false);
-	weapons[12] = (dname="Paladin cannon/shield",clsname="OnslaughtBP.ONSShockTankCannon",big=true);
-	weapons[13] = (dname="S.P.M.A. cannon",clsname="OnslaughtBP.ONSArtilleryCannon",big=true);
-	weapons[14] = (dname="S.P.M.A. skymine launcher",clsname="OnslaughtBP.ONSArtillerySideGun",big=false);
-	weapons[15] = (dname="Cicada missile packs",clsname="OnslaughtBP.ONSDualACSideGun",big=false);
-	weapons[16] = (dname="Cicada belly turret",clsname="OnslaughtBP.ONSDualACGatlingGun",big=false);
+	weapons[0] = (dname="(Default)",clsname="_default_",big=false,charging=false);
+	weapons[1] = (dname="Manta plasma casters",clsname="Onslaught.ONSHoverBikePlasmaGun",big=false,charging=false);
+	weapons[2] = (dname="Scorpion plasma ribbon launcher",clsname="Onslaught.ONSRVWebLauncher",big=false,charging=true);
+	weapons[3] = (dname="Hellbender skymine launcher",clsname="Onslaught.ONSPRVSideGun",big=false,charging=false);
+	weapons[4] = (dname="Hellbender dual laser turret",clsname="Onslaught.ONSPRVRearGun",big=true,charging=true);
+	weapons[5] = (dname="Goliath cannon",clsname="Onslaught.ONSHoverTankCannon",big=true,charging=false);
+	weapons[6] = (dname="Goliath machinegun",clsname="Onslaught.ONSTankSecondaryTurret",big=false,charging=false);
+	weapons[7] = (dname="Ion tank cannon",clsname="OnslaughtFull.ONSHoverTank_IonPlasma_Weapon",big=true,charging=true);
+	weapons[8] = (dname="Leviathan auxillary plasma",clsname="OnslaughtFull.ONSMASSideGun",big=false,charging=false);
+	weapons[9] = (dname="Leviathan rocket pack",clsname="OnslaughtFull.ONSMASRocketPack",big=true,charging=true);
+	weapons[10] = (dname="Leviathan main cannon",clsname="OnslaughtFull.ONSMASCannon",big=true,charging=false);
+	weapons[11] = (dname="Raptor plasma/missiles",clsname="Onslaught.ONSAttackCraftGun",big=false,charging=false);
+	weapons[12] = (dname="Paladin cannon/shield",clsname="OnslaughtBP.ONSShockTankCannon",big=true,charging=false);
+	weapons[13] = (dname="S.P.M.A. cannon",clsname="OnslaughtBP.ONSArtilleryCannon",big=true,charging=false);
+	weapons[14] = (dname="S.P.M.A. skymine launcher",clsname="OnslaughtBP.ONSArtillerySideGun",big=false,charging=false);
+	weapons[15] = (dname="Cicada missile packs",clsname="OnslaughtBP.ONSDualACSideGun",big=false,charging=false);
+	weapons[16] = (dname="Cicada belly turret",clsname="OnslaughtBP.ONSDualACGatlingGun",big=false,charging=false);
 	weaponcount = 17;
 
 }

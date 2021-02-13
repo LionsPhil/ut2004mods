@@ -10,7 +10,7 @@ my @vehicles = ({ # TODO Only Scorpion has been tweaked; SPMA has been vaguely
 	driverweps	=> 1,
 	passengerweps	=> 0,
 	pcmass		=> 2.5,
-	pccom		=> {X=>0.0, Y=>0.0, Z=>-0.5}, # Original is dead centre; assuming underhang
+	pccom		=> {X=>0.0, Y=>0.0, Z=>0.5}, # Original is dead centre
 	pcimpulse	=> 131072, # WHAM!
 	}, {
 	dname		=> 'Scorpion',
@@ -59,7 +59,7 @@ my @vehicles = ({ # TODO Only Scorpion has been tweaked; SPMA has been vaguely
 	clsname		=> 'OnslaughtFull.ONSMobileAssaultStation',
 	cfgname		=> 'leviathan',
 	big		=> 1, # Ya think?
-	driverweps	=> 1,
+	driverweps	=> 2,
 	passengerweps	=> 4,
 	pcmass		=> 0.95, # Removing that main cannon may do a bit
 	pccom		=> {X=>0.0, Y=>0.0, Z=>0.0}, # Unaltered
@@ -72,7 +72,7 @@ my @vehicles = ({ # TODO Only Scorpion has been tweaked; SPMA has been vaguely
 	driverweps	=> 1,
 	passengerweps	=> 0,
 	pcmass		=> 1.75,
-	pccom		=> {X=>-0.25, Y=>0.0, Z=>-0.5}, # Shift down, as Manta
+	pccom		=> {X=>-0.25, Y=>0.0, Z=>0.5}, # Shift up, as Manta
 	pcimpulse	=> 98304,
 	}, { # Onto the bonus pack...
 	dname		=> 'Paladin',
@@ -99,81 +99,81 @@ my @vehicles = ({ # TODO Only Scorpion has been tweaked; SPMA has been vaguely
 	clsname		=> 'OnslaughtBP.ONSDualAttackCraft',
 	cfgname		=> 'cicada',
 	big		=> 0,
-	driverweps	=> 1,
+	driverweps	=> 2,
 	passengerweps	=> 1,
 	pcmass		=> 1.5,
-	pccom		=> {X=>-0.25, Y=>0.0, Z=>-0.25}, # Shift down, as Manta
+	pccom		=> {X=>-0.25, Y=>0.0, Z=>0.25}, # Shift up, as Manta
 	pcimpulse	=> 65536,
 });
 
 my @weapons = ({
 	dname	=> '(Default)',
 	clsname	=> '_default_',
-	big	=> 0, # irrelevant
+	big	=> 0, charging => 0, # irrelevant
 	}, {
 	dname	=> 'Manta plasma casters',
 	clsname	=> 'Onslaught.ONSHoverBikePlasmaGun',
-	big	=> 0,
+	big	=> 0, charging => 0,
 	}, {
 	dname	=> 'Scorpion plasma ribbon launcher',
 	clsname	=> 'Onslaught.ONSRVWebLauncher',
-	big	=> 0,
+	big	=> 0, charging => 1,
 	}, {
 	dname	=> 'Hellbender skymine launcher',
 	clsname	=> 'Onslaught.ONSPRVSideGun',
-	big	=> 0,
+	big	=> 0, charging => 0,
 	}, {
 	dname	=> 'Hellbender dual laser turret',
 	clsname	=> 'Onslaught.ONSPRVRearGun',
-	big	=> 1,
+	big	=> 1, charging => 1,
 	}, {
 	dname	=> 'Goliath cannon',
 	clsname	=> 'Onslaught.ONSHoverTankCannon',
-	big	=> 1,
+	big	=> 1, charging => 0,
 	}, {
 	dname	=> 'Goliath machinegun',
 	clsname	=> 'Onslaught.ONSTankSecondaryTurret',
-	big	=> 0,
+	big	=> 0, charging => 0,
 	}, {
 	dname	=> 'Ion tank cannon',
 	clsname	=> 'OnslaughtFull.ONSHoverTank_IonPlasma_Weapon',
-	big	=> 1,
+	big	=> 1, charging => 1,
 	}, {
 	dname	=> 'Leviathan auxillary plasma',
 	clsname	=> 'OnslaughtFull.ONSMASSideGun',
-	big	=> 0,
+	big	=> 0, charging => 0,
 	}, {
 	dname	=> 'Leviathan rocket pack',
 	clsname	=> 'OnslaughtFull.ONSMASRocketPack',
-	big	=> 1,
+	big	=> 1, charging => 1, # ~= continuous fire of small rockets
 	}, {
 	dname	=> 'Leviathan main cannon',
 	clsname	=> 'OnslaughtFull.ONSMASCannon',
-	big	=> 1,
+	big	=> 1, charging => 0,
 	}, {
 	dname	=> 'Raptor plasma/missiles',
 	clsname	=> 'Onslaught.ONSAttackCraftGun',
-	big	=> 0,
+	big	=> 0, charging => 0,
 	}, { # And now, the bonus pack...
 	dname	=> 'Paladin cannon/shield',
 	clsname	=> 'OnslaughtBP.ONSShockTankCannon',
-	big	=> 1,
+	big	=> 1, charging => 0, # shield is, but hey
 	}, {
 	dname	=> 'S.P.M.A. cannon',
 	clsname	=> 'OnslaughtBP.ONSArtilleryCannon',
-	big	=> 1,
+	big	=> 1, charging => 0,
 	}, {
 	dname	=> 'S.P.M.A. skymine launcher',
 	clsname	=> 'OnslaughtBP.ONSArtillerySideGun',
-	big	=> 0,
+	big	=> 0, charging => 0,
 	}, {
 	dname	=> 'Cicada missile packs',
 	clsname	=> 'OnslaughtBP.ONSDualACSideGun',
-	big	=> 0,
+	big	=> 0, charging => 0, # normal use case isn't
 	}, {
 	dname	=> 'Cicada belly turret',
 	clsname	=> 'OnslaughtBP.ONSDualACGatlingGun',
-	big	=> 0,
+	big	=> 0, charging => 0,
 });
 
 open SOURCE, '<', 'MutLPVehicleMods.uc.src';
@@ -252,9 +252,10 @@ EOW
 	$index = 0;
 	foreach(@weapons) {
 		$vehwep .= "\tweapons[".($index++).'] = (' .
-			'dname="'  .$_->{'dname'  }.'",'.
-			'clsname="'.$_->{'clsname'}.'",'.
-			'big='    .($_->{'big'} ? 'true' : 'false').");\n";
+			'dname="'   .$_->{'dname'   }.'",'.
+			'clsname="' .$_->{'clsname' }.'",'.
+			'big='     .($_->{'big'     } ? 'true' : 'false').','.
+			'charging='.($_->{'charging'} ? 'true' : 'false').");\n";
 	}
 	$vehwep .= "\tweaponcount = $index;\n";
 

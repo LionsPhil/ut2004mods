@@ -14,7 +14,6 @@ __AUTOGEN_WARNING__
 
 // TODO Create a LinkGunTurret and add support for it
 // TODO Look into fiddling with the AI desirability of meddled vehicles (may be impossible without subclassing)
-// TODO Add a "neverkick" to turrets which have to charge up, else they kick continuously =/
 
 class MutLPVehicleMods extends Mutator
 	dependson(ONSVehicle)
@@ -44,6 +43,7 @@ struct MutLPVehicleModsWeapon {
 	var string dname; // Display name
 	var string clsname; // Class name
 	var bool big;
+	var bool charging; // Avoid generating impulses
 };
 
 var config bool adapthandling; // Make physics adaptations to allow for new weapons
@@ -80,14 +80,19 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 	// Find the weapon
 	windex = LookupWeapon(wepclass);
 	weapon = weapons[windex];
-
-	// Set weaponclsdrv/pas appropriately
 	if(windex != 0) {
 		wclass = class<ONSWeapon>(DynamicLoadObject(weapon.clsname, class'Class'));
 		vehicle.modified = true;
 	} else {
 		wclass = None;
 	}
+
+	// Apply special case for Leviathan main cannon
+	if((wclass == class'OnslaughtFull.ONSMASCannon') && (vehicle.cfgname != "leviathan")) {
+		wclass = class'MutLPVehicleMods.ONSMASCannonAlwaysDeployed';
+	}
+
+	// Set weaponclsdrv/pas appropriately
 	if(driver) {
 		vehicle.weaponclsdrv[idx] = wclass;
 	} else {
@@ -103,6 +108,10 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 			vehicle.missized = false; // Big vehicle has gained big weapon, so is no long missized
 		}
 	}
+
+	// If this weapon is of charging type, disable impulse
+	if(weapon.charging)
+		{ vehicle.pcimpulse = 0.0; }
 
 	// Debugging trace
 //	if(driver){dbg_dp="driver";}else{dbg_dp="passenger";}
@@ -149,6 +158,27 @@ __LIFE_IS_RIDICULOUS__
 	}
 }
 
+// Works out if the vehicle is one of these. Does some magic to allow for the subclassing in the vehicle tree (e.g. Cicada subclasses Raptor)
+function bool IsVehicleOneOfThese(ONSVehicle actvehicle, int queryindex) {
+	local int vindex;
+	// Consider also ClassIsChildOf(actvehicle.class, vehicles[queryindex].cls)
+	if(actvehicle.IsA(vehicles[queryindex].cls.Name)) {
+		// Ok, we're it/a subclass of it...but are we a subclass of something more specific?
+		for(vindex = 0; vindex < vehiclecount; vindex++) {
+			if((vindex != queryindex) && // Don't test against self!
+			   ClassIsChildOf(vehicles[vindex].cls, vehicles[queryindex].cls)) { // This other vehicle is a subclass of our candidate
+			   	// If we're one of the subclass, we're NOT considered one of these
+				// Recurse, in case we're even MORE specific
+			   	if(IsVehicleOneOfThese(actvehicle, vindex))
+					{ return false; }
+			}
+		}
+		// Ok, we're convinced
+		return true;
+	}
+	return false; // Not it/a subclass
+}
+
 // Modify vehicles as they are created in CheckReplacement. This avoids the need
 // for subclassing them (and then trying to work out how to convince that
 // subclass to accept a configurable turret) and changing the factories.
@@ -164,7 +194,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 
 	for(vindex = 0; vindex < vehiclecount; vindex++) {
 		vehicle = vehicles[vindex];
-		if(vehicle.modified && Other.IsA(vehicle.cls.Name)) { // Consider also ClassIsChildOf(Other.class, vehicle.cls)
+		if(vehicle.modified && IsVehicleOneOfThese(actvehicle, vindex)) {
 //			log("MutLPVehicleMods: Changing a vehicle of type " $ string(vehicle.cls.Name)); // Debug
 			// Ah, we've found it! Change the weapon slots.
 			for(sindex = 0; sindex < vehicle.driverweps; sindex++) {
@@ -178,7 +208,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 					actvehicle.PassengerWeapons[sindex].WeaponPawnClass =
 						vehicle.weaponclspas[sindex];
 				}
-			} ** Unsupported for now--ONSWeapon != ONSWeaponPawn (latter contains former) */
+			} */ // Unsupported for now--ONSWeapon != ONSWeaponPawn (latter contains former in Gun/GunClass field)
 
 			// Modify the physical properties if needed
 			if(adapthandling && vehicle.missized) {
@@ -243,8 +273,8 @@ static function FillPlayInfo(PlayInfo playinfo) {
 
 // DATA ////////////////////////////////////////////////////////////////////////
 defaultproperties {
-	FriendlyName="LionsPhil's Vehicle Modifications"
-	Description="Pimp your Onslaught-bound rides with an assortment of interesting tweaks.||http://www.zepler.net/~lionsphil/"
+	FriendlyName="LionsPhil's Vehicle Modifications";
+	Description="Pimp your Onslaught-bound rides with an assortment of interesting tweaks.||http://www.zepler.net/~lionsphil/";
 	bAddToServerPackages = true;
 
 	adapthandling = true;
