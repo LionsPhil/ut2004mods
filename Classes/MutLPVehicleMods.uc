@@ -7,11 +7,117 @@
  * actually providing a decent, OO approach to modifying their games.
  */
 
-// TODO Refactor this to use more structs and less bunches of arrays for turrets
-// TODO Genericise per-vehicle code and allow application to all armed vehicles
-// TODO Look into mechanism for replacing passenger weapons (eek)
 // TODO Create a LinkGunTurret and add support for it
 // TODO Look into fiddling with the AI desirability of meddled vehicles (may be impossible without subclassing)
+
+class MutLPVehicleMods extends Mutator
+	dependson(ONSVehicle)
+	config(User);
+
+struct MutLPVehicleModsVehicle {
+	var string dname; // Display name
+	var string clsname; // Class name
+	var bool big;
+	// Number of weapons in driver and passenger slots. Either may be zero.
+	var int driverweps;
+	var int passengerweps;
+	// Physics changes to make for incorrect size (i.e. if big, for undersize weapon, and vica-versa).
+	var float  pcmass;    // Multiplier for total mass
+	var vector pccom;     // New centre of mass
+	var float  pcimpulse; // Firing impulse
+	// Cached effects for this game
+	var class<ONSVehicle> cls; // Actual class (dynloaded from name)
+	var class<ONSWeapon> weaponcls; // Weapon class to use (None if unchanged)
+	var bool missized; // Apply over/undersize effects
+};
+
+struct MutLPVehicleModsWeapon {
+	var string dname; // Display name
+	var string clsname; // Class name
+	var bool big;
+};
+
+var config bool adapthandling; // Make physics adaptations to allow for new weapons
+var config array<string> weaponselections; // Hella-magical index nastyness here =/
+
+var array<MutLPVehicleModsVehicle> vehicles;
+var int                            vehiclecount;
+var array<MutLPVehicleModsWeapon>  weapons;
+var int                            weaponcount;
+
+var bool cachingdone;
+
+// GRAPHICAL CONFIGURATION  ////////////////////////////////////////////////////
+static event string GetDescriptionText(string propname) {
+	if(propname == "adapthandling") {
+		return "Over or undersized turrets will change vehicle handling";
+	} else if(Left(propname, Len("weaponselections")) == "weaponselections") {
+		return "Weapon to use on this turret";
+	} else { return Super.GetDescriptionText(propname); }
+}
+
+static function FillPlayInfo(PlayInfo playinfo) {
+	local int vindex;
+	local int i;
+	local int selindex;
+	local MutLPVehicleModsVehicle vehicle;
+	local string weaponstr;
+
+	Super.FillPlayInfo(playinfo);
+
+	for(i = 0; i < default.weaponcount; i++) {
+		if(weaponstr != "") { weaponstr $= ";"; }
+		weaponstr $= default.weapons[i].clsname $ ";" $ default.weapons[i].dname;
+	}
+
+	selindex = 0;
+	for(vindex = 0; vindex < default.vehiclecount; vindex++) {
+		vehicle = default.vehicles[vindex];
+		for(i = 0; i < vehicle.driverweps; i++) {
+			PlayInfo.AddSetting(default.GameGroup,
+				"weaponselections[" $ selindex $ "]",
+				vehicle.dname $ " driver " $ i,
+				0, 0, "Select", weaponstr);
+			selindex++;
+		}
+	}
+
+	PlayInfo.AddSetting(default.GameGroup, "adapthandling", "Turrets affect physics", 0, 1, "Check");
+}
+
+defaultproperties {
+	FriendlyName="LionsPhil's Vehicle Modifications"
+	Description="Pimp your Onslaught-bound rides with an assortment of interesting tweaks."
+	bAddToServerPackages = true;
+
+	adapthandling = true;
+	cachingdone   = false;
+
+	// OMFG. The UnrealScript parser is sensitive to whitespace in these. Ouch.
+
+	vehicles[0] = (dname="Scorpion",clsname="Onslaught.ONSRV",big=false,driverweps=1,passengerweps=0,pcmass=1.5,pccom=(X=-0.8125,Y=0.0,Z=-1.3),pcimpulse=-98304);
+	// COM = original * 3.25: feels about right: it's heavy, but not obscene (Scorpions appear front-engined and are near-perfectly balanced by default)
+	// Impluse is just enough to give a healthy kick when firing forward without making it impossible
+	vehiclecount = 1;
+
+	weapons[0] = (dname="Goliath cannon",clsname="Onslaught.ONSHoverTankCannon",big=true);
+	weaponcount = 1;
+}
+
+/* // "Bindings" are used in the config array to maintain some kind of persistence across changing vehicles
+// No they're not...configuration just don't work like that =(
+struct MutLPVehicleModsBinding {
+	var string vehicle; // Class name
+	var bool passenger;
+	var int slot;
+	var string weapon; // Class name
+};
+static function string Binding_Serialise(MutLPVehicleModsBinding binding) {
+	return binding.vehicle $ ":" $ (binding.passenger ? "p" : "d") $ binding.slot $ "=" $ binding.weapon;
+}
+var config array<string> weaponbindings; */
+
+/*
 
 class MutLPVehicleMods extends Mutator
   dependson(ONSVehicle)
@@ -116,7 +222,7 @@ function ModifyVPhysics(ONSVehicle vehicle, bool bigweapon) {
     if(bigweapon) { // Adapt Scorpion to oversized weapon
       change   = true;
       cmass    = 1.5;
-      ccom     = 3.25; // Feels about right: it's heavy, but not obscene (Scorpions appear front-engined and are near-perfectly balanced by default)
+      ccom     = 3.25; // Feels about right: it's heavy, but not obscene (Scorpions appear front-engined and are near-perfectly balanced by default) // X=-0.25,Y=0.0,Z=-0.4
       cimpulse = -98304; // Just enough to give a healthy kick when firing forward without making it impossible
     }
   } else if(spma != None) {
@@ -214,6 +320,8 @@ defaultproperties {
   wep_spma     = None;
 }
 
+*/
+
 /* Useful web links for all this:
 http://wiki.beyondunreal.com/wiki/Mutator
 http://wiki.beyondunreal.com/wiki/Mutator_Topics
@@ -231,4 +339,16 @@ http://wiki.beyondunreal.com/wiki/Karma_Functions_And_Events
 http://wiki.beyondunreal.com/wiki/ONSVehicle
 http://wiki.beyondunreal.com/wiki/Static_Function
 http://wiki.beyondunreal.com/wiki/Mutator_Config_GUI_(UT2004)
+http://wiki.beyondunreal.com/wiki/Dynamic_Array
+http://lists.tunes.org/archives/gclist/1999-July/001634.html
+http://udn.epicgames.com/Two/StringsInUnrealScript
 */
+
+/* Car Launcher 5-4's "Improved Vehicle Arena" uses this approach to get a listing of vehicles:
+	local array<CacheManager.VehicleRecord> VehicleList;
+	class'CacheManager'.static.GetVehicleList(VehicleList);
+	for (i=0; i< VehicleList.Length; i++) {
+		if (VehicleOptions != "") VehicleOptions $= ";";
+		VehicleOptions $= VehicleList[i].ClassName $ ";" $ VehicleList[i].FriendlyName;
+	}
+   But it doesn't extend out to subclasses of any general class (e.g. ONSWeapon) =( */
