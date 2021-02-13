@@ -10,11 +10,7 @@
  * vim: ts=4 syntax=uc
  */
 
-/*****************************************************************************
- * WARNING! This mutator is automatically generated from a meta-source file! *
- *          Modifications to this generated version will be lost!            *
- *****************************************************************************/
-
+__AUTOGEN_WARNING__
 
 // TODO Create a LinkGunTurret and add support for it
 // TODO Look into fiddling with the AI desirability of meddled vehicles (may be impossible without subclassing)
@@ -50,10 +46,7 @@ struct MutLPVehicleModsWeapon {
 };
 
 var config bool adapthandling; // Make physics adaptations to allow for new weapons
-var config string weaponselection_scorpion_d0;
-var config string weaponselection_spma_d0;
-var config string weaponselection_spma_p0;
-
+__MAGIC_CONFIG__
 
 var array<MutLPVehicleModsVehicle> vehicles;
 var int                            vehiclecount;
@@ -134,8 +127,6 @@ function EnsureCached() {
   		vehicle.cls = class<ONSVehicle>(DynamicLoadObject(vehicle.clsname, class'Class'));
 		if(vehicle.cls == None) {
 			log("MutLPVehicleMods: CLASS FOR VEHICLE '" $ vehicle.clsname $ "' NOT FOUND!");
-		} else {
-			log("MutLPVehicleMods: class for vehicle '" $ vehicle.clsname $ "' found as '" $ string(vehicle.cls.Name) $ "'");
 		}
 		vehicle.modified = false;
 		// Mis-sized if:
@@ -154,14 +145,7 @@ function EnsureCached() {
 		//     SetVehicleWeapon using the appropriate config variable
 		// } else move on to the next cfgname
 
-		if(false) { // Make the rest more consistent, and thus easier to generate
-		} else if(vehicle.cfgname == "scorpion") {
-			SetVehicleWeapon(vehicle, true,  0, weaponselection_scorpion_d0);
-		} else if(vehicle.cfgname == "spma") {
-			SetVehicleWeapon(vehicle, true,  0, weaponselection_spma_d0);
-			SetVehicleWeapon(vehicle, false, 0, weaponselection_spma_p0);
-		} else { log("MutLPVehicleMods: Unknown vehicle '" $ vehicle.cfgname $ "'!"); }
-
+__LIFE_IS_RIDICULOUS__
 		// End stonking great lump. Have a nice day!
 	}
 
@@ -273,14 +257,7 @@ defaultproperties {
 	adapthandling = true;
 	alreadycached = false;
 
-	vehicles[0] = (dname="Scorpion",clsname="Onslaught.ONSRV",cfgname="scorpion",big=false,driverweps=1,passengerweps=0,pcmass=1.5,pccom=(X=-0.8125,Y=0,Z=-1.3),pcimpulse=98304);
-	vehicles[1] = (dname="S.P.M.A.",clsname="OnslaughtBP.ONSArtillery",cfgname="spma",big=true,driverweps=1,passengerweps=1,pcmass=0.8,pccom=(X=0,Y=0,Z=-0.6),pcimpulse=4096);
-	vehiclecount = 2;
-
-	weapons[0] = (dname="(Default)",clsname="_default_",big=false);
-	weapons[1] = (dname="Goliath cannon",clsname="Onslaught.ONSHoverTankCannon",big=true);
-	weaponcount = 2;
-
+__VEHICLES_AND_WEAPONS__
 }
 
 /* Useful web links for all this:
