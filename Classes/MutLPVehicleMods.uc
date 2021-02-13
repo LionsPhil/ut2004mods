@@ -229,10 +229,10 @@ function bool IsVehicleOneOfThese(ONSVehicle actvehicle, int queryindex) {
 		// Ok, we're it/a subclass of it...but are we a subclass of something more specific?
 		for(vindex = 0; vindex < vehiclecount; vindex++) {
 			if((vindex != queryindex) && // Don't test against self!
-			   ClassIsChildOf(vehicles[vindex].cls, vehicles[queryindex].cls)) { // This other vehicle is a subclass of our candidate
-			   	// If we're one of the subclass, we're NOT considered one of these
+				ClassIsChildOf(vehicles[vindex].cls, vehicles[queryindex].cls)) { // This other vehicle is a subclass of our candidate
+				// If we're one of the subclass, we're NOT considered one of these
 				// Recurse, in case we're even MORE specific
-			   	if(IsVehicleOneOfThese(actvehicle, vindex))
+				if(IsVehicleOneOfThese(actvehicle, vindex))
 					{ return false; }
 			}
 		}
