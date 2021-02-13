@@ -2,6 +2,10 @@
 use warnings;
 use strict;
 
+# LionsPhil's Vehicle Modifications -- because motorised death is fun!
+# Copyright (c) 2005, Philip "LionsPhil" Boulain.
+# This work is licensed under the terms of the GNU General Public License v3.
+
 my @vehicles = ({ # TODO Only Scorpion has been tweaked; SPMA has been vaguely
 	dname		=> 'Manta',
 	clsname		=> 'Onslaught.ONSHoverBike',
