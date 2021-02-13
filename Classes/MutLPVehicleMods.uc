@@ -7,6 +7,12 @@
  * actually providing a decent, OO approach to modifying their games.
  */
 
+// TODO Refactor this to use more structs and less bunches of arrays for turrets
+// TODO Genericise per-vehicle code and allow application to all armed vehicles
+// TODO Look into mechanism for replacing passenger weapons (eek)
+// TODO Create a LinkGunTurret and add support for it
+// TODO Look into fiddling with the AI desirability of meddled vehicles (may be impossible without subclassing)
+
 class MutLPVehicleMods extends Mutator
   dependson(ONSVehicle)
   config(User);
@@ -171,14 +177,14 @@ static function FillPlayInfo(PlayInfo PlayInfo) {
   turrets = "";
   for(i = 0; i < default.GUIPossibleTurretCount; i++) {
     if(turrets != "") { turrets $= ";"; }
-    turrets $= default.GUIPossibleTurretNames[i] $ ";" $ default.GUIPossibleTurrets[i];
+    turrets $= default.GUIPossibleTurrets[i] $ ";" $ default.GUIPossibleTurretNames[i];
   }
   PlayInfo.AddSetting(default.GameGroup, "wepnam_scorpion", GetDisplayText("wepnam_scorpion"),
     0, 0, "Select", turrets);
   PlayInfo.AddSetting(default.GameGroup, "wepnam_spma",     GetDisplayText("wepnam_spma"),
-    0, 0, "Select", turrets);
-  PlayInfo.AddSetting(default.GameGroup, "wepnam_scorpion", GetDisplayText("wepnam_scorpion"),
-    0, 0, "Check");
+    0, 1, "Select", turrets);
+  PlayInfo.AddSetting(default.GameGroup, "adapthandling",   GetDisplayText("adapthandling"),
+    0, 2, "Check");
 }
 
 defaultproperties {
