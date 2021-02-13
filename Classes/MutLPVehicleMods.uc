@@ -60,8 +60,6 @@ var int                            vehiclecount;
 var array<MutLPVehicleModsWeapon>  weapons; // First item (zero) is magical (default)
 var int                            weaponcount;
 
-var bool alreadycached;
-
 // GAMEPLAY EFFECTS ////////////////////////////////////////////////////////////
 // Convert a classname into an index into the weapons array
 function int LookupWeapon(string classname) {
@@ -75,7 +73,8 @@ function int LookupWeapon(string classname) {
 }
 
 // Set a vehicle's cached weapon, using a form from the configuration variables
-function SetVehicleWeapon(MutLPVehicleModsVehicle vehicle, bool driver, int idx, string wepclass) {
+// Give me a damn reference (or at least copy back) for vehicle already! Changes 'modified' flag.
+function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int idx, string wepclass) {
 	local int windex;
 	local MutLPVehicleModsWeapon weapon;
 	local class<ONSWeapon> wclass;
@@ -120,21 +119,16 @@ function SetVehicleWeapon(MutLPVehicleModsVehicle vehicle, bool driver, int idx,
 }
 
 // Set up the caches, as this is slow and ugly
-// Even BeginPlay appears to come too late for CheckReplacement (lots of
-// vehicle.cls being 'None'), so a lazy-initialization approach is taken instead
-function EnsureCached() {
-	// Do caching
+function BeginPlay() { // Care not for Zones or Volumes, so don't need to wait until PostBeginPlay()
 	local int vindex;
 	local MutLPVehicleModsVehicle vehicle;
-
-	if(alreadycached) { return; }
 
 	for(vindex = 0; vindex < vehiclecount; vindex++) {
 		vehicle = vehicles[vindex];
   		vehicle.cls = class<ONSVehicle>(DynamicLoadObject(vehicle.clsname, class'Class'));
 		if(vehicle.cls == None) {
 			log("MutLPVehicleMods: CLASS FOR VEHICLE '" $ vehicle.clsname $ "' NOT FOUND!");
-		} else {
+		} else { // Debug
 			log("MutLPVehicleMods: class for vehicle '" $ vehicle.clsname $ "' found as '" $ string(vehicle.cls.Name) $ "'");
 		}
 		vehicle.modified = false;
@@ -163,9 +157,11 @@ function EnsureCached() {
 		} else { log("MutLPVehicleMods: Unknown vehicle '" $ vehicle.cfgname $ "'!"); }
 
 		// End stonking great lump. Have a nice day!
-	}
 
-	alreadycached = true;
+		vehicles[vindex] = vehicle; // Yeah, you WISH it were a reference!
+	}
+	log("Class of vehicle zero is: " $ string(vehicles[0].cls.Name)); // Debug
+	if(vehicles[0].modified) { log("Vehicle zero has been modified"); }
 }
 
 // Modify vehicles as they are created in CheckReplacement. This avoids the need
@@ -178,8 +174,6 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 	local int vindex;
 	local int sindex;
 
-	EnsureCached();
-
 	actvehicle = ONSVehicle(Other);
 	if(actvehicle == None) { return true; } // This isn't a vehicle; go away
 
@@ -187,7 +181,7 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 		vehicle = vehicles[vindex];
 		// Incredibly verbose debug
 		log("MutLPVehicleMods: " $ string(Other) $ " <==> " $ string(vehicle.cls.Name) $ "(" $ vindex $ ")");
-		if(vehicle.modified && Other.IsA(vehicle.cls.Name)) { // Also consider: ClassIsChildOf(Other.class, vehicle.cls)
+		if(vehicle.modified && Other.IsA(vehicle.cls.Name)) { // Consider also ClassIsChildOf(Other.class, vehicle.cls)
 			log("MutLPVehicleMods: Changing a vehicle of type " $ string(vehicle.cls.Name));
 			// Ah, we've found it! Change the weapon slots.
 			for(sindex = 0; sindex < vehicle.driverweps; sindex++) {
@@ -253,12 +247,12 @@ static function FillPlayInfo(PlayInfo playinfo) {
 				vehicle.dname $ " driver " $ (i+1),
 				0, 0, "Select", weaponstr);
 		}
-		for(i = 0; i < vehicle.passengerweps; i++) {
+/*		for(i = 0; i < vehicle.passengerweps; i++) {
 			playinfo.AddSetting(default.GameGroup,
 				"weaponselection_" $ vehicle.cfgname $ "_p" $ i,
 				vehicle.dname $ " passenger " $ (i+1),
 				0, 0, "Select", weaponstr);
-		}
+		} */ // Disabled for now---see code which implements this
 	}
 
 	playinfo.AddSetting(default.GameGroup, "adapthandling", "Turrets affect physics", 0, 1, "Check");
@@ -271,7 +265,6 @@ defaultproperties {
 	bAddToServerPackages = true;
 
 	adapthandling = true;
-	alreadycached = false;
 
 	vehicles[0] = (dname="Scorpion",clsname="Onslaught.ONSRV",cfgname="scorpion",big=false,driverweps=1,passengerweps=0,pcmass=1.5,pccom=(X=-0.8125,Y=0,Z=-1.3),pcimpulse=98304);
 	vehicles[1] = (dname="S.P.M.A.",clsname="OnslaughtBP.ONSArtillery",cfgname="spma",big=true,driverweps=1,passengerweps=1,pcmass=0.8,pccom=(X=0,Y=0,Z=-0.6),pcimpulse=4096);
