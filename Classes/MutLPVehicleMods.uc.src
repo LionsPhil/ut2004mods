@@ -14,6 +14,7 @@ __AUTOGEN_WARNING__
 
 // TODO Create a LinkGunTurret and add support for it
 // TODO Look into fiddling with the AI desirability of meddled vehicles (may be impossible without subclassing)
+// TODO Add a "neverkick" to turrets which have to charge up, else they kick continuously =/
 
 class MutLPVehicleMods extends Mutator
 	dependson(ONSVehicle)
@@ -72,9 +73,9 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 	local MutLPVehicleModsWeapon weapon;
 	local class<ONSWeapon> wclass;
 
-	local string dbg_dp;
-	local string dbg_w;
-	local string dbg_sz;
+//	local string dbg_dp;
+//	local string dbg_w;
+//	local string dbg_sz;
 
 	// Find the weapon
 	windex = LookupWeapon(wepclass);
@@ -104,11 +105,11 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 	}
 
 	// Debugging trace
-	if(driver){dbg_dp="driver";}else{dbg_dp="passenger";}
-	if(wclass == None){dbg_w="(default weapon)";}else{dbg_w=string(wclass.Name);}
-	if(vehicle.missized){dbg_sz=", and is missized";}else{dbg_sz="";}
-	log("MutLPVehicleMods: Vehicle '" $ vehicle.clsname $ "' has " $ dbg_dp
-		$ " weapon " $ idx $ " of " $ dbg_w $ dbg_sz);
+//	if(driver){dbg_dp="driver";}else{dbg_dp="passenger";}
+//	if(wclass == None){dbg_w="(default weapon)";}else{dbg_w=string(wclass.Name);}
+//	if(vehicle.missized){dbg_sz=", and is missized";}else{dbg_sz="";}
+//	log("MutLPVehicleMods: Vehicle '" $ vehicle.clsname $ "' has " $ dbg_dp
+//		$ " weapon " $ idx $ " of " $ dbg_w $ dbg_sz);
 }
 
 // Set up the caches, as this is slow and ugly
@@ -121,8 +122,8 @@ function BeginPlay() { // Care not for Zones or Volumes, so don't need to wait u
   		vehicle.cls = class<ONSVehicle>(DynamicLoadObject(vehicle.clsname, class'Class'));
 		if(vehicle.cls == None) {
 			log("MutLPVehicleMods: CLASS FOR VEHICLE '" $ vehicle.clsname $ "' NOT FOUND!");
-		} else { // Debug
-			log("MutLPVehicleMods: class for vehicle '" $ vehicle.clsname $ "' found as '" $ string(vehicle.cls.Name) $ "'");
+//		} else { // Debug
+//			log("MutLPVehicleMods: class for vehicle '" $ vehicle.clsname $ "' found as '" $ string(vehicle.cls.Name) $ "'");
 		}
 		vehicle.modified = false;
 		// Mis-sized if:
@@ -146,8 +147,6 @@ __LIFE_IS_RIDICULOUS__
 
 		vehicles[vindex] = vehicle; // Yeah, you WISH it were a reference!
 	}
-	log("Class of vehicle zero is: " $ string(vehicles[0].cls.Name)); // Debug
-	if(vehicles[0].modified) { log("Vehicle zero has been modified"); }
 }
 
 // Modify vehicles as they are created in CheckReplacement. This avoids the need
@@ -165,10 +164,8 @@ function bool CheckReplacement(Actor Other, out byte bSuperRelevant) {
 
 	for(vindex = 0; vindex < vehiclecount; vindex++) {
 		vehicle = vehicles[vindex];
-		// Incredibly verbose debug
-		log("MutLPVehicleMods: " $ string(Other) $ " <==> " $ string(vehicle.cls.Name) $ "(" $ vindex $ ")");
 		if(vehicle.modified && Other.IsA(vehicle.cls.Name)) { // Consider also ClassIsChildOf(Other.class, vehicle.cls)
-			log("MutLPVehicleMods: Changing a vehicle of type " $ string(vehicle.cls.Name));
+//			log("MutLPVehicleMods: Changing a vehicle of type " $ string(vehicle.cls.Name)); // Debug
 			// Ah, we've found it! Change the weapon slots.
 			for(sindex = 0; sindex < vehicle.driverweps; sindex++) {
 				if(vehicle.weaponclsdrv[sindex] != None) {
@@ -238,7 +235,7 @@ static function FillPlayInfo(PlayInfo playinfo) {
 				"weaponselection_" $ vehicle.cfgname $ "_p" $ i,
 				vehicle.dname $ " passenger " $ (i+1),
 				0, 0, "Select", weaponstr);
-		} */// Disabled for now---see code which implements this
+		} */ // Disabled for now---see code which implements this
 	}
 
 	playinfo.AddSetting(default.GameGroup, "adapthandling", "Turrets affect physics", 0, 1, "Check");

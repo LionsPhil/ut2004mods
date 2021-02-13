@@ -2,7 +2,17 @@
 use warnings;
 use strict;
 
-my @vehicles = ({
+my @vehicles = ({ # TODO Only Scorpion has been tweaked; SPMA has been vaguely
+	dname		=> 'Manta',
+	clsname		=> 'Onslaught.ONSHoverBike',
+	cfgname		=> 'manta',
+	big		=> 0,
+	driverweps	=> 1,
+	passengerweps	=> 0,
+	pcmass		=> 2.5,
+	pccom		=> {X=>0.0, Y=>0.0, Z=>-0.5}, # Original is dead centre; assuming underhang
+	pcimpulse	=> 131072, # WHAM!
+	}, {
 	dname		=> 'Scorpion',
 	clsname		=> 'Onslaught.ONSRV',
 	cfgname		=> 'scorpion',
@@ -15,6 +25,66 @@ my @vehicles = ({
 	# Just enough to give a healthy kick when firing forward without making it impossible
 	pcimpulse	=> 98304,
 	}, {
+	dname		=> 'Hellbender',
+	clsname		=> 'Onslaught.ONSPRV',
+	cfgname		=> 'hellbender',
+	big		=> 1, # Borderline...but I think its rear gun kicks it into this category
+	driverweps	=> 0,
+	passengerweps	=> 2,
+	pcmass		=> 0.9, # It's not going to lose much mass from smaller weapons
+	pccom		=> {X=>-0.3, Y=>0.0, Z=>-0.5}, # Keep original
+	pcimpulse	=> 2048,
+	}, {
+	dname		=> 'Goliath',
+	clsname		=> 'Onslaught.ONSHoverTank',
+	cfgname		=> 'goliath',
+	big		=> 1,
+	driverweps	=> 1,
+	passengerweps	=> 1,
+	pcmass		=> 0.92,
+	pccom		=> {X=>0.0, Y=>0.0, Z=>0.2}, # Up a touch
+	pcimpulse	=> 1024,
+	}, {
+	dname		=> 'Ion tank',
+	clsname		=> 'OnslaughtFull.ONSHoverTank_IonPlasma',
+	cfgname		=> 'iontank',
+	big		=> 1,
+	driverweps	=> 1,
+	passengerweps	=> 1,
+	pcmass		=> 0.91,
+	pccom		=> {X=>0.0, Y=>0.0, Z=>0.2}, # As Goliath
+	pcimpulse	=> 1536,
+	}, {
+	dname		=> 'Leviathan',
+	clsname		=> 'OnslaughtFull.ONSMobileAssaultStation',
+	cfgname		=> 'leviathan',
+	big		=> 1, # Ya think?
+	driverweps	=> 1,
+	passengerweps	=> 4,
+	pcmass		=> 0.95, # Removing that main cannon may do a bit
+	pccom		=> {X=>0.0, Y=>0.0, Z=>0.0}, # Unaltered
+	pcimpulse	=> 0, # Did a kitten sneeze somewhere?
+	}, {
+	dname		=> 'Raptor',
+	clsname		=> 'Onslaught.ONSAttackCraft',
+	cfgname		=> 'raptor',
+	big		=> 0,
+	driverweps	=> 1,
+	passengerweps	=> 0,
+	pcmass		=> 1.75,
+	pccom		=> {X=>-0.25, Y=>0.0, Z=>-0.5}, # Shift down, as Manta
+	pcimpulse	=> 98304,
+	}, { # Onto the bonus pack...
+	dname		=> 'Paladin',
+	clsname		=> 'OnslaughtBP.ONSShockTank',
+	cfgname		=> 'paladin',
+	big		=> 1,
+	driverweps	=> 1,
+	passengerweps	=> 1,
+	pcmass		=> 0.85, # It's a big turret
+	pccom		=> {X=>-0.25, Y=>0.0, Z=>-1.25}, # A touch up
+	pcimpulse	=> 4096,
+	}, { # The SPMA is an amusing one, as this finds a bug in Epic code (IsDepoyed()'s "None" test is broken)
 	dname		=> 'S.P.M.A.',
 	clsname		=> 'OnslaughtBP.ONSArtillery',
 	cfgname		=> 'spma',
@@ -24,6 +94,16 @@ my @vehicles = ({
 	pcmass		=> 0.8,
 	pccom		=> {X=>0.0, Y=>0.0, Z=>-0.6},
 	pcimpulse	=> 4096,
+	}, {
+	dname		=> 'Cicada',
+	clsname		=> 'OnslaughtBP.ONSDualAttackCraft',
+	cfgname		=> 'cicada',
+	big		=> 0,
+	driverweps	=> 1,
+	passengerweps	=> 1,
+	pcmass		=> 1.5,
+	pccom		=> {X=>-0.25, Y=>0.0, Z=>-0.25}, # Shift down, as Manta
+	pcimpulse	=> 65536,
 });
 
 my @weapons = ({
@@ -31,9 +111,69 @@ my @weapons = ({
 	clsname	=> '_default_',
 	big	=> 0, # irrelevant
 	}, {
+	dname	=> 'Manta plasma casters',
+	clsname	=> 'Onslaught.ONSHoverBikePlasmaGun',
+	big	=> 0,
+	}, {
+	dname	=> 'Scorpion plasma ribbon launcher',
+	clsname	=> 'Onslaught.ONSRVWebLauncher',
+	big	=> 0,
+	}, {
+	dname	=> 'Hellbender skymine launcher',
+	clsname	=> 'Onslaught.ONSPRVSideGun',
+	big	=> 0,
+	}, {
+	dname	=> 'Hellbender dual laser turret',
+	clsname	=> 'Onslaught.ONSPRVRearGun',
+	big	=> 1,
+	}, {
 	dname	=> 'Goliath cannon',
 	clsname	=> 'Onslaught.ONSHoverTankCannon',
 	big	=> 1,
+	}, {
+	dname	=> 'Goliath machinegun',
+	clsname	=> 'Onslaught.ONSTankSecondaryTurret',
+	big	=> 0,
+	}, {
+	dname	=> 'Ion tank cannon',
+	clsname	=> 'OnslaughtFull.ONSHoverTank_IonPlasma_Weapon',
+	big	=> 1,
+	}, {
+	dname	=> 'Leviathan auxillary plasma',
+	clsname	=> 'OnslaughtFull.ONSMASSideGun',
+	big	=> 0,
+	}, {
+	dname	=> 'Leviathan rocket pack',
+	clsname	=> 'OnslaughtFull.ONSMASRocketPack',
+	big	=> 1,
+	}, {
+	dname	=> 'Leviathan main cannon',
+	clsname	=> 'OnslaughtFull.ONSMASCannon',
+	big	=> 1,
+	}, {
+	dname	=> 'Raptor plasma/missiles',
+	clsname	=> 'Onslaught.ONSAttackCraftGun',
+	big	=> 0,
+	}, { # And now, the bonus pack...
+	dname	=> 'Paladin cannon/shield',
+	clsname	=> 'OnslaughtBP.ONSShockTankCannon',
+	big	=> 1,
+	}, {
+	dname	=> 'S.P.M.A. cannon',
+	clsname	=> 'OnslaughtBP.ONSArtilleryCannon',
+	big	=> 1,
+	}, {
+	dname	=> 'S.P.M.A. skymine launcher',
+	clsname	=> 'OnslaughtBP.ONSArtillerySideGun',
+	big	=> 0,
+	}, {
+	dname	=> 'Cicada missile packs',
+	clsname	=> 'OnslaughtBP.ONSDualACSideGun',
+	big	=> 0,
+	}, {
+	dname	=> 'Cicada belly turret',
+	clsname	=> 'OnslaughtBP.ONSDualACGatlingGun',
+	big	=> 0,
 });
 
 open SOURCE, '<', 'MutLPVehicleMods.uc.src';
