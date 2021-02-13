@@ -118,6 +118,8 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 		wclass = class'LionsPhilMut.ONSMASCannonAlwaysDeployed';
 	}
 
+	// TODO Cicada needs a similar exception to use ONSLinkableWeapon
+
 	// Set weaponclsdrv/pas appropriately
 	if(driver) {
 		vehicle.weaponclsdrv[idx] = wclass;
@@ -138,7 +140,6 @@ function SetVehicleWeapon(out MutLPVehicleModsVehicle vehicle, bool driver, int 
 	// If this weapon is of charging type, disable impulse
 	if(weapon.charging) {
 		vehicle.pcimpulse = 0.0;
-		log(">>>>> This vehicle " $ vehicle.dname $ " has a charging weapon, so its impulse has been zero'd.");
 	}
 
 	// Debugging trace
@@ -216,7 +217,6 @@ function BeginPlay() { // Care not for Zones or Volumes, so don't need to wait u
 
 		// End stonking great lump. Have a nice day!
 
-        log(">>> " $ vehicle.dname $ " has impulse of " $ vehicle.pcimpulse);
 		vehicles[vindex] = vehicle; // Yeah, you WISH it were a reference!
 	}
 }
