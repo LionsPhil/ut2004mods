@@ -26,6 +26,37 @@ Putting Cicada belly guns on Raptors make them a lot worse since they can now de
 
 And, finally, not everything will work 100%. Only Scorpions really have their physics tweaked properly, and some guns have special effects that don't work well on a different vehicle (e.g. the Paladin's shield combo will do self-damage).
 
+### Dedicated servers
+
+If you're running a dedicated server, you might need the `.ucl` file from Releases as well, which I think gets automatically generated otherwise when starting a local game. You will still want to run it locally/graphically once to do configuration; you can then copy the `[LionsPhilMut.MutLPVehicleMods]` stanza from `User.ini` to your server. Here's an example one that makes the above suggested swaps:
+
+```ini
+[LionsPhilMut.MutLPVehicleMods]
+adapthandling=True
+weaponselection_manta_d0=
+weaponselection_scorpion_d0=Onslaught.ONSHoverTankCannon
+weaponselection_hellbender_p0=
+weaponselection_hellbender_p1=
+weaponselection_goliath_d0=OnslaughtFull.ONSMASCannon
+weaponselection_goliath_p0=
+weaponselection_iontank_d0=
+weaponselection_iontank_p0=
+weaponselection_leviathan_d0=
+weaponselection_leviathan_d1=
+weaponselection_leviathan_p0=
+weaponselection_leviathan_p1=
+weaponselection_leviathan_p2=
+weaponselection_leviathan_p3=
+weaponselection_raptor_d0=OnslaughtBP.ONSDualACGatlingGun
+weaponselection_paladin_d0=
+weaponselection_paladin_p0=
+weaponselection_spma_d0=
+weaponselection_spma_p0=
+weaponselection_cicada_d0=
+weaponselection_cicada_d1=
+weaponselection_cicada_p0=
+```
+
 ## Building
 
 Heck if I can remember properly. This was from about forteen years now, I just dug it out again. I think you need the Unreal Development Environment, circa 2005--2006, to compile it.
