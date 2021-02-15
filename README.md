@@ -3,7 +3,9 @@
 
 ## About
 
-Lets you swap around the turrets on the vehicles in the game Unreal Tournament 2004.
+Lets you swap around the turrets on the vehicles in the game Unreal Tournament 2004. Here's a video of some gameplay with it:
+
+[![A Scorpion with a Goliath turret.](http://img.youtube.com/vi/iN1C7E86ZNQ/0.jpg)](http://www.youtube.com/watch?v=iN1C7E86ZNQ "Watch some gameplay on YouTube")
 
 ## Installation
 
@@ -60,10 +62,6 @@ weaponselection_cicada_p0=
 ## Building
 
 Heck if I can remember properly. This was from about forteen years now, I just dug it out again. I think you need the Unreal Development Environment, circa 2005--2006, to compile it.
-
-## Footage
-
-None yet!
 
 ## License
 
