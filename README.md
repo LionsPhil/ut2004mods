@@ -24,7 +24,7 @@ I strongly recommend putting the Goliath tank turret on the little Scorpion bugg
 
 It's also entertaining to put the Leviathan main cannon on Goliaths, if you want more explosions on maps that don't normally spawn Leviathans.
 
-Putting Cicada belly guns on Raptors make them a lot worse since they can now deal with AVRiLs...
+Putting Cicada belly guns on Raptors make them a lot worse since they can now deal with AVRiLs&hellip;try the SPMA cannon if you want to be *really* silly.
 
 And, finally, not everything will work 100%. Only Scorpions really have their physics tweaked properly, and some guns have special effects that don't work well on a different vehicle (e.g. the Paladin's shield combo will do self-damage).
 
@@ -49,7 +49,8 @@ weaponselection_leviathan_p0=
 weaponselection_leviathan_p1=
 weaponselection_leviathan_p2=
 weaponselection_leviathan_p3=
-weaponselection_raptor_d0=OnslaughtBP.ONSDualACGatlingGun
+weaponselection_raptor_d0=OnslaughtBP.ONSArtilleryCannon
+; or try OnslaughtBP.ONSDualACGatlingGun for Cicada belly gun
 weaponselection_paladin_d0=
 weaponselection_paladin_p0=
 weaponselection_spma_d0=
